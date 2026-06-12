@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kelime Analiz Sistemi - Heap Data Structure</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- D3.js for Tree Visualization -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <i class="fas fa-chart-line"></i>
+                <span>Kelime Analiz Sistemi</span>
+            </div>
+            <div class="nav-actions">
+                <button class="theme-toggle" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <div class="nav-info">
+                    <i class="fas fa-database"></i>
+                    <span>Heap Data Structure</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-bars"></i>
+                <span>Menü</span>
+            </div>
+            <ul class="sidebar-menu">
+                <li class="menu-item active" data-section="upload">
+                    <i class="fas fa-upload"></i>
+                    <span>Dosya Yükle</span>
+                </li>
+                <li class="menu-item" data-section="statistics">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>İstatistikler</span>
+                </li>
+                <li class="menu-item" data-section="words">
+                    <i class="fas fa-list"></i>
+                    <span>Kelime Listesi</span>
+                </li>
+                <li class="menu-item" data-section="heap">
+                    <i class="fas fa-project-diagram"></i>
+                    <span>Heap Yapısı</span>
+                </li>
+                <li class="menu-item" data-section="charts">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>Grafikler</span>
+                </li>
+            </ul>
+            <div class="sidebar-footer">
+                <div class="info-card">
+                    <i class="fas fa-info-circle"></i>
+                    <p>Bu sistem, TXT dosyalarındaki kelimeleri Heap Data Structure kullanarak analiz eder.</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Content Area -->
+        <main class="content">
+            <!-- Upload Section -->
+            <section id="upload-section" class="content-section active">
+                <div class="section-header">
+                    <h1><i class="fas fa-cloud-upload-alt"></i> Metin Girişi</h1>
+                    <p>Analiz etmek istediğiniz metni girin</p>
+                </div>
+
+                <div class="upload-container">
+                    <!-- Input Method Selection -->
+                    <div class="input-method-selector">
+                        <button class="method-btn active" id="fileMethodBtn" onclick="switchInputMethod('file')">
+                            <i class="fas fa-file-upload"></i>
+                            <span>Dosya Yükle</span>
+                        </button>
+                        <button class="method-btn" id="textMethodBtn" onclick="switchInputMethod('text')">
+                            <i class="fas fa-keyboard"></i>
+                            <span>Metin Yaz</span>
+                        </button>
+                    </div>
+
+                    <!-- File Upload Method -->
+                    <div class="input-method" id="fileMethod">
+                        <div class="upload-area" id="uploadArea">
+                            <div class="upload-icon">
+                                <i class="fas fa-file-upload"></i>
+                            </div>
+                            <h3>Dosyayı Sürükle & Bırak</h3>
+                            <p>veya</p>
+                            <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                                <i class="fas fa-folder-open"></i> Dosya Seç
+                            </button>
+                            <input type="file" id="fileInput" accept=".txt" style="display: none;">
+                            <p class="upload-hint">Sadece .txt dosyaları (Max 16MB)</p>
+                        </div>
+                    </div>
+
+                    <!-- Text Input Method -->
+                    <div class="input-method" id="textMethod" style="display: none;">
+                        <div class="text-input-area">
+                            <textarea id="textInput" placeholder="Metninizi buraya yazın veya yapıştırın...&#10;&#10;Örnek: Python programlama dili çok güçlü bir dildir. Python ile web geliştirme yapabilirsiniz..."></textarea>
+                            <div class="text-input-actions">
+                                <button class="btn btn-secondary" onclick="clearTextInput()">
+                                    <i class="fas fa-eraser"></i> Temizle
+                                </button>
+                                <button class="btn btn-primary" onclick="analyzeText()">
+                                    <i class="fas fa-chart-line"></i> Analiz Et
+                                </button>
+                            </div>
+                            <p class="upload-hint">Minimum 10 kelime gereklidir</p>
+                        </div>
+                    </div>
+
+                    <div class="upload-progress" id="uploadProgress" style="display: none;">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                        <p id="progressText">Analiz ediliyor...</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Statistics Section -->
+            <section id="statistics-section" class="content-section">
+                <div class="section-header">
+                    <h1><i class="fas fa-chart-bar"></i> İstatistikler</h1>
+                    <p>Dosya analiz sonuçları</p>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card glass">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);">
+                            <i class="fas fa-font"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="totalWords">0</h3>
+                            <p>Toplam Kelime</p>
+                        </div>
+                    </div>
+
+                    <div class="stat-card glass">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);">
+                            <i class="fas fa-layer-group"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="uniqueWords">0</h3>
+                            <p>Benzersiz Kelime</p>
+                        </div>
+                    </div>
+
+                    <div class="stat-card glass">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);">
+                            <i class="fas fa-crown"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="mostCommonWord">-</h3>
+                            <p>En Çok Kullanılan</p>
+                            <span class="stat-badge" id="mostCommonCount">0 kez</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card glass">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                            <i class="fas fa-database"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="heapSize">0</h3>
+                            <p>Heap Boyutu</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Words List Section -->
+            <section id="words-section" class="content-section">
+                <div class="section-header">
+                    <h1><i class="fas fa-list"></i> Kelime Listesi</h1>
+                    <p>Heap yapısına göre sıralanmış kelimeler</p>
+                </div>
+
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchInput" placeholder="Kelime ara...">
+                </div>
+
+                <div class="words-container">
+                    <div class="table-container">
+                        <table class="words-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Kelime</th>
+                                    <th>İlk Harf</th>
+                                    <th>Tekrar Sayısı</th>
+                                    <th>Yüzde</th>
+                                </tr>
+                            </thead>
+                            <tbody id="wordsTableBody">
+                                <tr>
+                                    <td colspan="5" class="no-data">
+                                        <i class="fas fa-inbox"></i>
+                                        <p>Henüz veri yok. Lütfen bir dosya yükleyin.</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Pagination -->
+                    <div class="pagination-container" id="paginationContainer" style="display: none;">
+                        <div class="pagination-info">
+                            <span id="paginationInfo">Gösterilen: 0 - 0 / 0</span>
+                        </div>
+                        <div class="pagination-controls">
+                            <button class="pagination-btn" id="firstPageBtn" onclick="goToFirstPage()">
+                                <i class="fas fa-angle-double-left"></i>
+                            </button>
+                            <button class="pagination-btn" id="prevPageBtn" onclick="goToPrevPage()">
+                                <i class="fas fa-angle-left"></i>
+                            </button>
+                            <span class="page-numbers" id="pageNumbers"></span>
+                            <button class="pagination-btn" id="nextPageBtn" onclick="goToNextPage()">
+                                <i class="fas fa-angle-right"></i>
+                            </button>
+                            <button class="pagination-btn" id="lastPageBtn" onclick="goToLastPage()">
+                                <i class="fas fa-angle-double-right"></i>
+                            </button>
+                        </div>
+                        <div class="pagination-size">
+                            <label>Sayfa başına satır:</label>
+                            <select id="itemsPerPage" onchange="changeItemsPerPage()">
+                                <option value="50">50</option>
+                                <option value="100" selected>100</option>
+                                <option value="200">200</option>
+                                <option value="500">500</option>
+                                <option value="all">Tümü</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Heap Structure Section -->
+            <section id="heap-section" class="content-section">
+                <div class="section-header">
+                    <h1><i class="fas fa-project-diagram"></i> Heap Yapısı</h1>
+                    <p>Binary Heap Tree görselleştirmesi</p>
+                </div>
+
+                <div class="heap-container">
+                    <div class="heap-info glass">
+                        <h3><i class="fas fa-info-circle"></i> Heap Kuralları</h3>
+                        <ul>
+                            <li><i class="fas fa-key" style="color: #f59e0b;"></i> <strong>Anahtar 1 (Primary Key):</strong> İlk harf (A-Z alfabetik sıra)</li>
+                            <li><i class="fas fa-key" style="color: #ef4444;"></i> <strong>Anahtar 2 (Secondary Key):</strong> Tekrar sayısı (büyükten küçüğe)</li>
+                            <li><i class="fas fa-check"></i> Aynı harfle başlayanlar: En çok tekrar eden önce gelir</li>
+                            <li><i class="fas fa-check"></i> Parent node, child node'lardan önceliklidir</li>
+                            <li><i class="fas fa-check"></i> Renkler farklı harfleri gösterir</li>
+                            <li><i class="fas fa-info-circle"></i> <strong>Gösterim:</strong> Kelime (üst), Sayı (merkez), [Harf] (alt)</li>
+                        </ul>
+                    </div>
+
+                    <div class="heap-visualization" id="heapVisualization">
+                        <!-- Zoom controls -->
+                        <div class="heap-zoom-controls">
+                            <button class="zoom-btn" onclick="zoomIn()" title="Yakınlaştır">
+                                <i class="fas fa-search-plus"></i>
+                            </button>
+                            <button class="zoom-btn" onclick="zoomOut()" title="Uzaklaştır">
+                                <i class="fas fa-search-minus"></i>
+                            </button>
+                            <button class="zoom-btn" onclick="resetZoom()" title="Sıfırla">
+                                <i class="fas fa-compress"></i>
+                            </button>
+                        </div>
+                        <div class="no-data">
+                            <i class="fas fa-project-diagram"></i>
+                            <p>Heap yapısı görselleştirilecek. Lütfen bir dosya yükleyin.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Charts Section -->
+            <section id="charts-section" class="content-section">
+                <div class="section-header">
+                    <h1><i class="fas fa-chart-pie"></i> Grafikler</h1>
+                    <p>Görsel analiz ve istatistikler</p>
+                </div>
+
+                <div class="charts-grid">
+                    <div class="chart-card glass">
+                        <h3><i class="fas fa-chart-bar"></i> En Çok Kullanılan 10 Kelime</h3>
+                        <canvas id="topWordsChart"></canvas>
+                    </div>
+
+                    <div class="chart-card glass">
+                        <h3><i class="fas fa-chart-pie"></i> Harf Dağılımı</h3>
+                        <canvas id="letterDistributionChart"></canvas>
+                    </div>
+
+                    <div class="chart-card glass full-width">
+                        <h3><i class="fas fa-chart-line"></i> Harf Bazlı Kelime Sayıları</h3>
+                        <canvas id="letterStatsChart"></canvas>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loader">
+            <div class="loader-circle"></div>
+            <div class="loader-circle"></div>
+            <div class="loader-circle"></div>
+            <p>Analiz ediliyor...</p>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toastMessage">İşlem başarılı!</span>
+    </div>
+
+    <!-- Custom JavaScript -->
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
